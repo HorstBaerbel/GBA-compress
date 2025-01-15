@@ -7,3 +7,6 @@
 [submodule "glob"]
 	path = glob
 	url = https://github.com/p-ranav/glob.git
+[submodule "cxxopts"]
+	path = cxxopts
+	url = https://github.com/jarro2783/cxxopts.git
