@@ -1,0 +1,3 @@
+[submodule "gba/3ds-cmake"]
+	path = gba/3ds-cmake
+	url = https://github.com/Xtansia/3ds-cmake.git
