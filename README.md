@@ -4,7 +4,7 @@
 
 Game Boy Advance tools for compression:
 
-* [gbacomp](src/gbacomp.cpp) - Convert / compress a (list of) file(s) to a .h / .c file to compile them into your program or output data to stdout.
+* [gbacomp](src/gbacomp.cpp) - Compress a file to a .h / .c file to compile them into your program or output data to stdout.
 
 If you find a bug or make an improvement your pull requests are appreciated.
 
