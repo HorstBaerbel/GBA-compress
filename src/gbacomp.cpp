@@ -80,7 +80,6 @@ bool readArguments(int argc, const char *argv[])
         opts.add_option("", options.toSrc.cxxOption);
         opts.add_option("", options.decompress.cxxOption);
         opts.add_option("", options.force.cxxOption);
-        opts.add_option("", options.toSrc.cxxOption);
         opts.add_option("", options.lz10.cxxOption);
         opts.add_option("", options.vram.cxxOption);
         opts.add_option("", options.dryRun.cxxOption);
@@ -157,6 +156,7 @@ int main(int argc, const char *argv[])
         // check arguments
         if (argc < 3 || !readArguments(argc, argv))
         {
+            printUsage();
             return 2;
         }
         // check input and output
