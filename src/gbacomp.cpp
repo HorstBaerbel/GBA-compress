@@ -15,6 +15,8 @@
 #include "cxxopts/include/cxxopts.hpp"
 #include "glob/single_include/glob/glob.hpp"
 
+constexpr const char *PROGRAM_VERSION = "0.2.0";
+
 std::string m_inFile;
 std::string m_outFile;
 Options options;
@@ -33,14 +35,47 @@ std::string getCommandLine(int argc, const char *argv[])
     return result;
 }
 
+void printUsage()
+{
+    // 80 chars:  --------------------------------------------------------------------------------
+    std::cout << "Compress a file into GBA/NDS-decodable formats" << std::endl;
+    std::cout << "Usage: gbacomp [OPTION]... METHOD INFILE OUTFILE/OUTNAME" << std::endl;
+    std::cout << options.toStdout.helpString() << std::endl;
+    std::cout << options.toSrc.helpString() << std::endl;
+    std::cout << options.decompress.helpString() << std::endl;
+    std::cout << options.force.helpString() << std::endl;
+    std::cout << "Compression METHODs (mutually exclusive):" << std::endl;
+    std::cout << options.lz10.helpString() << std::endl;
+    std::cout << "COMPRESS modifiers (optional):" << std::endl;
+    std::cout << options.vram.helpString() << std::endl;
+    std::cout << "Valid combinations are e.g. \"--rle --lz10\"." << std::endl;
+    std::cout << "INFILE:" << std::endl;
+    std::cout << "Input file name or \"-\" to read from stdin." << std::endl;
+    std::cout << "OUTFILE/OUTNAME:" << std::endl;
+    std::cout << "An output file path or a file base name. Pass \"-\" to write to stdout.";
+    std::cout << "When compressing to a binary file (default), OUTFILE will be written to." << std::endl;
+    std::cout << "With \"--tosrc\", two source files OUTNAME.h and OUTNAME.c will be generated." << std::endl;
+    std::cout << "All variables will begin with the base name portion of OUTNAME" << std::endl;
+    std::cout << "MISC options (all optional):" << std::endl;
+    std::cout << options.dryRun.helpString() << std::endl;
+    std::cout << "h, help: Show this help." << std::endl;
+    std::cout << "V, version: Display version number." << std::endl;
+}
+
 bool readArguments(int argc, const char *argv[])
 {
     try
     {
-        cxxopts::Options opts("img2h", "Convert and compress a list images to a .h / .c file to compile it into a program");
+        cxxopts::Options opts("gbacomp", "Compress a file into GBA/NDS-decodable formats");
         opts.add_option("", {"h,help", "Print help"});
+        opts.add_option("", {"V,version", "Display version number"});
         opts.add_option("", {"infile", "Input file, use \"-\" for stdin", cxxopts::value<std::string>()});
-        opts.add_option("", {"outname", "Output file and variable name, e.g \"foo\". This will name the output files \"foo.h\" and \"foo.c\" and variable names will start with \"FOO_\", use \"-\" for stdin", cxxopts::value<std::string>()});
+        opts.add_option("", {"outname", "Output file / base name", cxxopts::value<std::string>()});
+        opts.add_option("", options.toStdout.cxxOption);
+        opts.add_option("", options.toSrc.cxxOption);
+        opts.add_option("", options.decompress.cxxOption);
+        opts.add_option("", options.force.cxxOption);
+        opts.add_option("", options.toSrc.cxxOption);
         opts.add_option("", options.lz10.cxxOption);
         opts.add_option("", options.vram.cxxOption);
         opts.add_option("", options.dryRun.cxxOption);
@@ -49,19 +84,16 @@ bool readArguments(int argc, const char *argv[])
         // check if help was requested
         if (result.count("h"))
         {
+            printUsage();
             return false;
         }
-        // get output file / name
-        if (result.count("outname"))
+        // check if version was requested
+        if (result.count("V"))
         {
-            m_outFile = result["outname"].as<std::string>();
-        }
-        else
-        {
-            std::cout << "No output passed!" << std::endl;
+            printVersion();
             return false;
         }
-        // get input file(s)
+        // get input file
         if (result.count("infile"))
         {
             m_inFile = result["infile"].as<std::string>();
@@ -77,6 +109,23 @@ bool readArguments(int argc, const char *argv[])
             std::cout << "No input passed!" << std::endl;
             return false;
         }
+        // get output file(s)
+        if (result.count("outname"))
+        {
+            m_outFile = result["outname"].as<std::string>();
+            // check if file exists
+            if (!std::filesystem::exists(m_outFile))
+            {
+                std::cout << "Input file \"" << m_inFile << "\" does not exist!" << std::endl;
+                return false;
+            }
+        }
+        else
+        {
+            std::cout << "No input passed!" << std::endl;
+            return false;
+        }
+        // TODO: check exclusive options
     }
     catch (const cxxopts::exceptions::parsing &e)
     {
@@ -87,25 +136,10 @@ bool readArguments(int argc, const char *argv[])
     return true;
 }
 
-void printUsage()
+void printVersion()
 {
     // 80 chars:  --------------------------------------------------------------------------------
-    std::cout << "Compress and convert a file to a .c and .h file to compile into a" << std::endl;
-    std::cout << "GBA executable or output data to stdout." << std::endl;
-    std::cout << "Usage: gbacomp METHOD INFILE [INFILEn...] OUTNAME" << std::endl;
-    std::cout << "Compression METHODs (mutually exclusive):" << std::endl;
-    std::cout << options.lz10.helpString() << std::endl;
-    std::cout << "COMPRESS modifiers (optional):" << std::endl;
-    std::cout << options.vram.helpString() << std::endl;
-    std::cout << "Valid combinations are e.g. \"--rle --lz10\"." << std::endl;
-    std::cout << "INFILE: can be a file list and/or can have * as a wildcard." << std::endl;
-    std::cout << "OUTNAME: is determined from the first non-existant file path. It can be an " << std::endl;
-    std::cout << "absolute or relative file path or a file base name. Two files OUTNAME.h and " << std::endl;
-    std::cout << "OUTNAME.c will be generated. All variables will begin with the base name " << std::endl;
-    std::cout << "portion of OUTNAME." << std::endl;
-    std::cout << "MISC options (all optional):" << std::endl;
-    std::cout << options.dryRun.helpString() << std::endl;
-    std::cout << "help: Show this help." << std::endl;
+    std::cout << "gbacomp v" << PROGRAM_VERSION << std::endl;
 }
 
 int main(int argc, const char *argv[])
@@ -115,7 +149,6 @@ int main(int argc, const char *argv[])
         // check arguments
         if (argc < 3 || !readArguments(argc, argv))
         {
-            printUsage();
             return 2;
         }
         // check input and output
@@ -129,7 +162,6 @@ int main(int argc, const char *argv[])
             std::cerr << "No output passed. Aborting." << std::endl;
             return 1;
         }
-        const bool writeToStdout = m_outFile == "-";
         // read from stdin or file depending on option
         std::vector<uint8_t> inData;
         const bool readFromStdin = m_inFile == "-";
@@ -157,7 +189,7 @@ int main(int argc, const char *argv[])
             inStream.read(reinterpret_cast<char *>(inData.data()), inFileSize);
             inStream.close();
         }
-        if (!writeToStdout)
+        if (!options.toStdout)
         {
             std::cout << "Read " << inData.size() << " bytes from " << (readFromStdin ? "stdin" : m_inFile) << std::endl;
         }
@@ -167,14 +199,14 @@ int main(int argc, const char *argv[])
         {
             outData = Compression::encodeLZ10(inData, {options.vram.isSet});
         }
-        if (!writeToStdout)
+        if (!options.toStdout)
         {
             std::cout << "Data compressed to " << outData.size() << " bytes (" << (static_cast<double>(outData.size()) / static_cast<double>(inData.size()) * 100.0) << "%)" << std::endl;
         }
         // open output files / stdout
         if (!options.dryRun)
         {
-            if (writeToStdout)
+            if (options.toStdout)
             {
                 // reopen stdout in binary mode
                 freopen(nullptr, "wb", stdout);

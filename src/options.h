@@ -27,6 +27,10 @@ public:
         std::function<void(const cxxopts::ParseResult &)> parse;
     };
 
+    static Option toStdout;
+    static OptionT<std::string> toSrc;
+    static Option decompress;
+    static Option force;
     static Option lz10;
     // static Option rle;
     static Option vram;
