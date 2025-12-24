@@ -50,7 +50,7 @@ int main()
 		// convert image from RGB888 to BGR555 and display
 		auto srcPtr8 = reinterpret_cast<const uint8_t *>(ScratchPad);
 		auto dstPtr16 = reinterpret_cast<uint16_t *>(VRAM);
-		for (uint32_t i = 0; i < (240 * 160 * 3); i += 3)
+		for (uint32_t i = 0; i < 240 * 160; ++i, srcPtr8 += 3)
 		{
 			uint32_t pixel = static_cast<uint32_t>(srcPtr8[0]) >> 3;
 			pixel |= (static_cast<uint32_t>(srcPtr8[1]) >> 3) << 5;
