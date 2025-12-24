@@ -1,19 +1,16 @@
-#include <gba_base.h>
-#include <gba_input.h>
-#include <gba_interrupt.h>
-#include <gba_systemcalls.h>
-#include <gba_timers.h>
-#include <gba_video.h>
-
-#include "base.h"
-#include "memory.h"
-#include "output.h"
+#include "compression/lz77.h"
+#include "memory/memory.h"
+#include "print/output.h"
+#include "sys/base.h"
+#include "sys/input.h"
+#include "sys/interrupts.h"
+#include "sys/timers.h"
+#include "sys/video.h"
 #include "tui.h"
-#include "videoplayer.h"
 
-#include "data/video.h"
+#include "data/images.h"
 
-EWRAM_DATA ALIGN(4) uint32_t ScratchPad[240 * 160 / 2 + 22000 / 4 + 1]; // scratch pad memory for decompression. ideally we would dynamically allocate this at the start of decoding
+EWRAM_DATA ALIGN(4) uint8_t ScratchPad[240 * 160 * 3]; // scratch pad memory for decompression
 
 int main()
 {
@@ -25,18 +22,9 @@ int main()
 	// set up text UI
 	TUI::setup();
 	TUI::fillBackground(TUI::Color::Black);
-	// read file header
-	Video::init(reinterpret_cast<const uint32_t *>(VIDEO_DATA), ScratchPad, sizeof(ScratchPad));
-	const auto &videoInfo = Video::getInfo();
-	// print video info
-	TUI::printf(0, 0, "Video decompression demo");
-	TUI::printf(0, 1, "Frames: %d, Fps: %d", videoInfo.nrOfFrames, videoInfo.fps);
-	TUI::printf(0, 2, "Size: %dx%d", videoInfo.width, videoInfo.height);
-	TUI::printf(0, 3, "Bits / pixel: %d", videoInfo.bitsPerPixel);
-	TUI::printf(0, 4, "Colors in colormap: %d", videoInfo.colorMapEntries);
-	TUI::printf(0, 5, "Bits / color: %d", videoInfo.bitsInColorMap);
-	TUI::printf(0, 6, "Memory needed: %d", videoInfo.maxMemoryNeeded);
-	TUI::printf(0, 19, "       Press A to play");
+	TUI::printf(0, 8, "      Decompression demo");
+	TUI::printf(0, 10, "       Press A to skip");
+	TUI::printf(0, 11, "        to next image");
 	// wait for keypress
 	do
 	{
@@ -48,37 +36,36 @@ int main()
 	} while (true);
 	// switch video mode to 240x160x2
 	REG_DISPCNT = MODE_3 | BG2_ON;
-	// start main loop
-	int32_t maxFrameTimeMs = 0;
-	Video::play();
 	do
 	{
 		// start benchmark timer
 		REG_TM3CNT_L = 0;
 		REG_TM3CNT_H = TIMER_START | 2;
-		// decode and possibly blit new frame from video
-		Video::decodeAndBlitFrame((uint32_t *)VRAM);
+		// decode and blit image
+		Compression::LZ77UnCompWrite16bit(IMAGE_LZ10_DATA, ScratchPad);
 		// end benchmark timer
 		REG_TM3CNT_H = 0;
 		auto durationMs = static_cast<int32_t>(REG_TM3CNT_L) * 1000;
-		if (maxFrameTimeMs < durationMs)
+		Debug::printf("Decoding time: %f ms", durationMs);
+		// convert image from RGB888 to BGR555 and display
+		auto srcPtr8 = reinterpret_cast<const uint8_t *>(ScratchPad);
+		auto dstPtr16 = reinterpret_cast<uint16_t *>(VRAM);
+		for (uint32_t i = 0; i < (240 * 160 * 3); i += 3)
 		{
-			maxFrameTimeMs = durationMs;
-			Debug::printf("Max. frame time: %f ms", durationMs);
+			uint32_t pixel = static_cast<uint32_t>(srcPtr8[0]) >> 3;
+			pixel |= (static_cast<uint32_t>(srcPtr8[1]) >> 3) << 5;
+			pixel |= (static_cast<uint32_t>(srcPtr8[2]) >> 3) << 10;
+			*dstPtr16++ = pixel;
 		}
-		if (!Video::hasMoreFrames())
+		// wait for next key press
+		do
 		{
-			Video::stop();
-			do
+			scanKeys();
+			if (keysDown() & KEY_A)
 			{
-				scanKeys();
-				if (keysDown() & KEY_A)
-				{
-					break;
-				}
-			} while (true);
-			Video::play();
-		}
+				break;
+			}
+		} while (true);
 	} while (true);
 	return 0;
 }
