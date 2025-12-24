@@ -48,7 +48,6 @@ void printUsage()
     std::cout << options.lz10.helpString() << std::endl;
     std::cout << "COMPRESS modifiers (optional):" << std::endl;
     std::cout << options.vram.helpString() << std::endl;
-    std::cout << "Valid combinations are e.g. \"--rle --lz10\"." << std::endl;
     std::cout << "INFILE:" << std::endl;
     std::cout << "Input file name or \"-\" to read from stdin." << std::endl;
     std::cout << "OUTFILE/OUTNAME:" << std::endl;
@@ -60,6 +59,12 @@ void printUsage()
     std::cout << options.dryRun.helpString() << std::endl;
     std::cout << "h, help: Show this help." << std::endl;
     std::cout << "V, version: Display version number." << std::endl;
+}
+
+void printVersion()
+{
+    // 80 chars:  --------------------------------------------------------------------------------
+    std::cout << "gbacomp v" << PROGRAM_VERSION << std::endl;
 }
 
 bool readArguments(int argc, const char *argv[])
@@ -114,18 +119,27 @@ bool readArguments(int argc, const char *argv[])
         {
             m_outFile = result["outname"].as<std::string>();
             // check if file exists
-            if (!std::filesystem::exists(m_outFile))
+            if (options.toSrc && (std::filesystem::exists(m_outFile + ".c") || std::filesystem::exists(m_outFile + ".h")) && !options.force)
             {
-                std::cout << "Input file \"" << m_inFile << "\" does not exist!" << std::endl;
+                std::cout << "Output file \"" << m_outFile << "\".c/.h already exists!" << std::endl;
+                return false;
+            }
+            if (!options.toSrc && std::filesystem::exists(m_outFile) && !options.force)
+            {
+                std::cout << "Output file \"" << m_outFile << "\" already exists!" << std::endl;
                 return false;
             }
         }
-        else
+        else if (!result.count("stdout"))
         {
-            std::cout << "No input passed!" << std::endl;
+            std::cout << "No output passed!" << std::endl;
             return false;
         }
-        // TODO: check exclusive options
+        if (options.toSrc && options.toStdout)
+        {
+            std::cout << "Can't set both tosrc and stdout!" << std::endl;
+            return false;
+        }
     }
     catch (const cxxopts::exceptions::parsing &e)
     {
@@ -134,12 +148,6 @@ bool readArguments(int argc, const char *argv[])
         return false;
     }
     return true;
-}
-
-void printVersion()
-{
-    // 80 chars:  --------------------------------------------------------------------------------
-    std::cout << "gbacomp v" << PROGRAM_VERSION << std::endl;
 }
 
 int main(int argc, const char *argv[])
@@ -189,6 +197,7 @@ int main(int argc, const char *argv[])
             inStream.read(reinterpret_cast<char *>(inData.data()), inFileSize);
             inStream.close();
         }
+        REQUIRE(inData.size() < (1 << 24), std::runtime_error, "Data to too big to compress (max. 2^24 bytes allowed)");
         if (!options.toStdout)
         {
             std::cout << "Read " << inData.size() << " bytes from " << (readFromStdin ? "stdin" : m_inFile) << std::endl;
@@ -197,7 +206,7 @@ int main(int argc, const char *argv[])
         std::vector<uint8_t> outData;
         if (options.lz10)
         {
-            outData = Compression::encodeLZ10(inData, {options.vram.isSet});
+            outData = Compression::encodeLZSS_10(inData, {options.vram.isSet});
         }
         if (!options.toStdout)
         {
@@ -215,10 +224,11 @@ int main(int argc, const char *argv[])
                 freopen(nullptr, "w", stdout);
                 REQUIRE(bytesWritten == outData.size(), std::runtime_error, "Failed to write data to stdout");
             }
-            else
+            else if (options.toSrc)
             {
-                std::ofstream hFile(m_outFile + ".h", std::ios::out);
-                std::ofstream cFile(m_outFile + ".c", std::ios::out);
+                auto openMode = std::ios::out | std::ios::trunc;
+                std::ofstream hFile(m_outFile + ".h", openMode);
+                std::ofstream cFile(m_outFile + ".c", openMode);
                 if (hFile.is_open() && cFile.is_open())
                 {
                     std::cout << "Writing output files " << m_outFile << ".h, " << m_outFile << ".c" << std::endl;
@@ -264,6 +274,31 @@ int main(int argc, const char *argv[])
                     hFile.close();
                     cFile.close();
                     std::cerr << "Failed to open " << m_outFile << ".h, " << m_outFile << ".c for writing" << std::endl;
+                    return 1;
+                }
+            }
+            else
+            {
+                auto openMode = std::ios::out | std::ios::trunc;
+                std::ofstream binFile(m_outFile, openMode);
+                if (binFile.is_open())
+                {
+                    std::cout << "Writing output file " << m_outFile << std::endl;
+                    try
+                    {
+                        binFile.write(reinterpret_cast<const char *>(outData.data()), outData.size());
+                    }
+                    catch (const std::runtime_error &e)
+                    {
+                        binFile.close();
+                        std::cerr << "Failed to write data to output file: " << e.what() << std::endl;
+                        return 1;
+                    }
+                }
+                else
+                {
+                    binFile.close();
+                    std::cerr << "Failed to open " << m_outFile << " for writing" << std::endl;
                     return 1;
                 }
             }
