@@ -24,7 +24,7 @@ macro(target_gbacomp_file _listName _outname _infiles _options)
 	file(GLOB _globbed_infiles CONFIGURE_DEPENDS ${CMAKE_CURRENT_LIST_DIR}/${_infile_list})
 	add_custom_command(
 		OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/data/${_outname}"
-		COMMAND "${GBACOMP_PATH_PATH}" ${_option_list} ${_infile_list} data/${_outname}
+		COMMAND "${GBACOMP_PATH}" ${_option_list} ${_infile_list} data/${_outname}
 		DEPENDS ${_globbed_infiles}
 		WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
 		COMMAND_EXPAND_LISTS
@@ -52,7 +52,7 @@ set_source_files_properties(data/images.s OBJECT_DEPENDS ${CMAKE_SOURCE_DIR}/dat
 
 # Add image source files to be converted with gbacomp here. Paths with spaces need escaping (\"\")
 # These files will be added to TARGET_DATA_FILES
-target_gbacomp_file(TARGET_DATA_FILES image_lz10 "\"../data/artificial_240x160.raw\"" --lz10)
+target_gbacomp_file(TARGET_DATA_FILES "image_lz10" "\"../data/artificial_240x160.raw\"" "--lz10")
 
 LIST(APPEND TARGET_INCLUDE_DIRS
 	${DEVKITARM}/arm-none-eabi/include
