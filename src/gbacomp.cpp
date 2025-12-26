@@ -1,3 +1,4 @@
+#include "compression/lz4.h"
 #include "compression/lzss.h"
 #include "exception.h"
 #include "io/textio.h"
@@ -45,6 +46,7 @@ void printUsage()
     std::cout << options.decompress.helpString() << std::endl;
     std::cout << options.force.helpString() << std::endl;
     std::cout << "Compression METHODs (mutually exclusive):" << std::endl;
+    std::cout << options.lz4.helpString() << std::endl;
     std::cout << options.lz10.helpString() << std::endl;
     std::cout << "COMPRESS modifiers (optional):" << std::endl;
     std::cout << options.vram.helpString() << std::endl;
@@ -80,6 +82,7 @@ bool readArguments(int argc, const char *argv[])
         opts.add_option("", options.toSrc.cxxOption);
         opts.add_option("", options.decompress.cxxOption);
         opts.add_option("", options.force.cxxOption);
+        opts.add_option("", options.lz4.cxxOption);
         opts.add_option("", options.lz10.cxxOption);
         opts.add_option("", options.vram.cxxOption);
         opts.add_option("", options.dryRun.cxxOption);
@@ -204,7 +207,11 @@ int main(int argc, const char *argv[])
         }
         // compress data
         std::vector<uint8_t> outData;
-        if (options.lz10)
+        if (options.lz4)
+        {
+            outData = Compression::encodeLZ4_40(inData, {options.vram.isSet});
+        }
+        else if (options.lz10)
         {
             outData = Compression::encodeLZSS_10(inData, {options.vram.isSet});
         }

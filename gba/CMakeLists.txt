@@ -43,15 +43,17 @@ LIST(APPEND TARGET_SOURCE_FILES
 	GBA-demo-framework/src/sys/intdispatcher.s
 	GBA-demo-framework/src/sys/interrupts.cpp
 	GBA-demo-framework/src/compression/bios.cpp
+	GBA-demo-framework/src/compression/lz4_asm.s
 	GBA-demo-framework/src/compression/lz77_asm.s
 	data/font_8x8.c
 	data/images.s
 	gbacomp.cpp
 )
-set_source_files_properties(data/images.s OBJECT_DEPENDS ${CMAKE_SOURCE_DIR}/data/image_lz10)
+set_source_files_properties(data/images.s OBJECT_DEPENDS "${CMAKE_SOURCE_DIR}/data/image_lz4;${CMAKE_SOURCE_DIR}/data/image_lz10")
 
 # Add image source files to be converted with gbacomp here. Paths with spaces need escaping (\"\")
 # These files will be added to TARGET_DATA_FILES
+target_gbacomp_file(TARGET_DATA_FILES "image_lz4" "\"../data/artificial_240x160.raw\"" "--lz4")
 target_gbacomp_file(TARGET_DATA_FILES "image_lz10" "\"../data/artificial_240x160.raw\"" "--lz10")
 
 LIST(APPEND TARGET_INCLUDE_DIRS

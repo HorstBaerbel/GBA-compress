@@ -31,6 +31,7 @@ public:
     static OptionT<std::string> toSrc;
     static Option decompress;
     static Option force;
+    static Option lz4;
     static Option lz10;
     // static Option rle;
     static Option vram;

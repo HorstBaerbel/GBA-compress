@@ -37,9 +37,13 @@ Options::Option Options::force{
     false,
     {"force", "Force overwriting of output file(s).", cxxopts::value(decompress.isSet)}};
 
+Options::Option Options::lz4{
+    false,
+    {"lz4", "Use LZ4 compression variant 40h.", cxxopts::value(lz4.isSet)}};
+
 Options::Option Options::lz10{
     false,
-    {"lz10", "Use LZ77 compression variant 10.", cxxopts::value(lz10.isSet)}};
+    {"lz10", "Use LZ77 compression variant 10h (GBA BIOS decompressable).", cxxopts::value(lz10.isSet)}};
 
 /*Options::Option Options::rle{
     false,

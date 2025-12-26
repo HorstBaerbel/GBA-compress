@@ -1,3 +1,4 @@
+#include "compression/lz4.h"
 #include "compression/lz77.h"
 #include "memory/memory.h"
 #include "print/output.h"
@@ -12,6 +13,28 @@
 
 EWRAM_DATA ALIGN(4) uint8_t ScratchPad[240 * 160 * 3]; // scratch pad memory for decompression
 
+auto Decompress_LZ4(const uint8_t *data) -> void
+{
+	Compression::LZ4UnCompWrite8bit_ASM(reinterpret_cast<const uint32_t *>(data), reinterpret_cast<uint32_t *>(ScratchPad));
+}
+
+auto Decompress_LZ10(const uint8_t *data) -> void
+{
+	Compression::LZ77UnCompWrite16bit_ASM(data, ScratchPad);
+}
+
+struct ImageEntry
+{
+	const char *codec = nullptr;
+	const uint8_t *data = nullptr;
+	void (*func)(const uint8_t *) = nullptr;
+};
+
+const ImageEntry Images[] = {
+	{"             LZ4", IMAGE_LZ4_DATA, &Decompress_LZ4},
+	{"         LZSS / LZ10", IMAGE_LZ10_DATA, &Decompress_LZ10},
+};
+
 int main()
 {
 	// set waitstates for GamePak ROM and EWRAM
@@ -19,30 +42,31 @@ int main()
 	Memory::RegWaitEwram = Memory::WaitEwramNormal;
 	// start wall clock
 	irqInit();
-	// set up text UI
-	TUI::setup();
-	TUI::fillBackground(TUI::Color::Black);
-	TUI::printf(0, 8, "      Decompression demo");
-	TUI::printf(0, 10, "       Press A to skip");
-	TUI::printf(0, 11, "        to next image");
-	// wait for keypress
+	uint32_t imageIndex = 0;
 	do
 	{
-		scanKeys();
-		if (keysDown() & KEY_A)
+		// set up text UI
+		TUI::setup();
+		TUI::fillBackground(TUI::Color::Black);
+		TUI::printf(0, 0, "      Decompression demo");
+		TUI::printf(0, 9, "    Press A to decompress");
+		TUI::printf(0, 11, Images[imageIndex].codec);
+		// wait for keypress
+		do
 		{
-			break;
-		}
-	} while (true);
-	// switch video mode to 240x160x2
-	REG_DISPCNT = MODE_3 | BG2_ON;
-	do
-	{
+			scanKeys();
+			if (keysDown() & KEY_A)
+			{
+				break;
+			}
+		} while (true);
+		// switch video mode to 240x160x2
+		REG_DISPCNT = MODE_3 | BG2_ON;
 		// start benchmark timer
 		REG_TM3CNT_L = 0;
 		REG_TM3CNT_H = TIMER_START | 2;
 		// decode and blit image
-		Compression::LZ77UnCompWrite16bit(IMAGE_LZ10_DATA, ScratchPad);
+		Images[imageIndex].func(Images[imageIndex].data);
 		// end benchmark timer
 		REG_TM3CNT_H = 0;
 		auto durationMs = static_cast<int32_t>(REG_TM3CNT_L) * 1000;
@@ -57,7 +81,7 @@ int main()
 			pixel |= (static_cast<uint32_t>(srcPtr8[2]) >> 3) << 10;
 			*dstPtr16++ = pixel;
 		}
-		// wait for next key press
+		// wait for keypress
 		do
 		{
 			scanKeys();
@@ -66,6 +90,7 @@ int main()
 				break;
 			}
 		} while (true);
+		imageIndex = (imageIndex + 1) % (sizeof(Images) / sizeof(ImageEntry));
 	} while (true);
 	return 0;
 }

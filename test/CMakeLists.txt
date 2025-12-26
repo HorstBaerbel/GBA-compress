@@ -5,21 +5,23 @@ cmake_minimum_required(VERSION 3.21)
 
 include(FetchContent)
 
-# Fetch Silesia corpus as test data
-FetchContent_Declare(
-  silesia_corpus
-  URL https://sun.aei.polsl.pl/~sdeor/corpus/silesia.zip
-  URL_HASH MD5=c240c17d6805fb8a0bde763f1b94cd99
-  SOURCE_DIR data/silesia
-)
-# Fetch Canterbury corpus as test data
-FetchContent_Declare(
-  canterbury_corpus
-  URL https://corpus.canterbury.ac.nz/resources/cantrbry.zip
-  URL_HASH MD5=0308697233961e9217fd52be64ca5e85
-  SOURCE_DIR data/canterbury
-)
-FetchContent_MakeAvailable(silesia_corpus canterbury_corpus)
+# # Fetch Silesia corpus as test data
+# FetchContent_Declare(
+#   silesia_corpus
+#   URL https://sun.aei.polsl.pl/~sdeor/corpus/silesia.zip
+#   URL_HASH MD5=c240c17d6805fb8a0bde763f1b94cd99
+#   SOURCE_DIR data/silesia
+#   DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+# )
+# # Fetch Canterbury corpus as test data
+# FetchContent_Declare(
+#   canterbury_corpus
+#   URL https://corpus.canterbury.ac.nz/resources/cantrbry.zip
+#   URL_HASH MD5=0308697233961e9217fd52be64ca5e85
+#   SOURCE_DIR data/canterbury
+#   DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+# )
+# FetchContent_MakeAvailable(silesia_corpus canterbury_corpus)
 
 #-------------------------------------------------------------------------------
 # Add required libraries
@@ -50,6 +52,7 @@ add_subdirectory(Catch2)
 # Define targets
 
 set(TARGET_SRC
+    ${PROJECT_SOURCE_DIR}/src/compression/lz4.cpp
     ${PROJECT_SOURCE_DIR}/src/compression/lzss.cpp
 )
 
