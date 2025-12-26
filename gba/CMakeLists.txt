@@ -53,8 +53,8 @@ set_source_files_properties(data/images.s OBJECT_DEPENDS "${CMAKE_SOURCE_DIR}/da
 
 # Add image source files to be converted with gbacomp here. Paths with spaces need escaping (\"\")
 # These files will be added to TARGET_DATA_FILES
-target_gbacomp_file(TARGET_DATA_FILES "image_lz4" "\"../data/artificial_240x160.raw\"" "--lz4")
-target_gbacomp_file(TARGET_DATA_FILES "image_lz10" "\"../data/artificial_240x160.raw\"" "--lz10")
+target_gbacomp_file(TARGET_DATA_FILES "image_lz4" "\"../data/artificial_240x160.raw\"" "--lz4 --force")
+target_gbacomp_file(TARGET_DATA_FILES "image_lz10" "\"../data/artificial_240x160.raw\"" "--lz10 --force")
 
 LIST(APPEND TARGET_INCLUDE_DIRS
 	${DEVKITARM}/arm-none-eabi/include
