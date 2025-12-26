@@ -5,6 +5,8 @@
 Game Boy Advance tools for compression:
 
 * [gbacomp](src/gbacomp.cpp) - Compress a file to a .h / .c file to compile them into your program or output data to stdout.
+  It compressed data to LZSS / LZ10 GBA BIOS-compatible data or to LZ4 (better compression). 
+* The [gba](gba) subfolder contains a GBA example for decompressing that data using fast ARM assembler functions.
 
 If you find a bug or make an improvement your pull requests are appreciated.
 
@@ -17,12 +19,16 @@ All of this is under the [MIT License](LICENSE). It uses:
 * [3ds-cmake](https://github.com/Xtansia/3ds-cmake) for building GBA binaries.
 * [Catch2](https://github.com/catchorg/Catch2) for unit tests.
 * [LZ77 decompression routines](gba/compression/lz77.s) from [Lorenzooone/Pokemon-Gen3-to-Gen-X](https://github.com/Lorenzooone/Pokemon-Gen3-to-Gen-X/blob/main/source/decompress.s) which is in turn derived from [Cult-of-GBA/BIOS](https://github.com/Cult-of-GBA/BIOS/blob/master/bios_calls/decompression/lz77.s). Licensed as [MIT License](https://github.com/Cult-of-GBA/BIOS/blob/master/LICENSE).
+* Test images and video from the Blender "[Big Buck Bunny](https://peach.blender.org/)" movie (c) copyright 2008, Blender Foundation. Licensed as [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
+* Test images from [imagecompression.info](https://imagecompression.info/test_images/) resized to fit my needs.
 
 ## Prequisites
 
 * You **must** have [OpenMP](https://www.openmp.org/) installed for compiling. Install it with:
 
   ```apt install libomp-dev``` or ```dnf install libomp-devel```
+
+* The GBA examples **need** to have [devkitPro / devkitArm](https://devkitpro.org/) installed for compiling. Installation instructions can be found [here](https://devkitpro.org/wiki/Getting_Started).
 
 ## Building
 
