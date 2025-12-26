@@ -5,7 +5,7 @@
 Game Boy Advance tools for compression:
 
 * [gbacomp](src/gbacomp.cpp) - Compress a file to a .h / .c file to compile them into your program or output data to stdout.
-  It compressed data to LZSS / LZ10 GBA BIOS-compatible data or to LZ4 (better compression). 
+  It compresses data to LZSS / LZ10 GBA BIOS-compatible data or to LZ4 (better compression, faster decompression). 
 * The [gba](gba) subfolder contains a GBA example for decompressing that data using fast ARM assembler functions.
 
 If you find a bug or make an improvement your pull requests are appreciated.
