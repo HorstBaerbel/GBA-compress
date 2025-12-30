@@ -49,12 +49,33 @@ LIST(APPEND TARGET_SOURCE_FILES
 	data/images.s
 	gbacomp.cpp
 )
-set_source_files_properties(data/images.s OBJECT_DEPENDS "${CMAKE_SOURCE_DIR}/data/image_lz4;${CMAKE_SOURCE_DIR}/data/image_lz10")
+set_source_files_properties(data/images.s OBJECT_DEPENDS "${CMAKE_SOURCE_DIR}/data/image_lz4_0;${CMAKE_SOURCE_DIR}/data/image_lz77_0")
+set_source_files_properties(data/images.s OBJECT_DEPENDS "${CMAKE_SOURCE_DIR}/data/image_lz4_1;${CMAKE_SOURCE_DIR}/data/image_lz77_1")
+set_source_files_properties(data/images.s OBJECT_DEPENDS "${CMAKE_SOURCE_DIR}/data/image_lz4_2;${CMAKE_SOURCE_DIR}/data/image_lz77_2")
+set_source_files_properties(data/images.s OBJECT_DEPENDS "${CMAKE_SOURCE_DIR}/data/image_lz4_3;${CMAKE_SOURCE_DIR}/data/image_lz77_3")
+set_source_files_properties(data/images.s OBJECT_DEPENDS "${CMAKE_SOURCE_DIR}/data/image_lz4_4;${CMAKE_SOURCE_DIR}/data/image_lz77_4")
+set_source_files_properties(data/images.s OBJECT_DEPENDS "${CMAKE_SOURCE_DIR}/data/image_lz4_5;${CMAKE_SOURCE_DIR}/data/image_lz77_5")
+set_source_files_properties(data/images.s OBJECT_DEPENDS "${CMAKE_SOURCE_DIR}/data/image_lz4_6;${CMAKE_SOURCE_DIR}/data/image_lz77_6")
+set_source_files_properties(data/images.s OBJECT_DEPENDS "${CMAKE_SOURCE_DIR}/data/image_lz4_7;${CMAKE_SOURCE_DIR}/data/image_lz77_7")
 
 # Add image source files to be converted with gbacomp here. Paths with spaces need escaping (\"\")
 # These files will be added to TARGET_DATA_FILES
-target_gbacomp_file(TARGET_DATA_FILES "image_lz4" "\"../data/artificial_240x160.raw\"" "--lz4 --force")
-target_gbacomp_file(TARGET_DATA_FILES "image_lz10" "\"../data/artificial_240x160.raw\"" "--lz10 --force")
+target_gbacomp_file(TARGET_DATA_FILES "image_lz4_0" "\"../data/flower_foveon_240x160_bgr555.raw\"" "--lz4 --force")
+target_gbacomp_file(TARGET_DATA_FILES "image_lz4_1" "\"../data/artificial_240x160_bgr555.raw\"" "--lz4 --force")
+target_gbacomp_file(TARGET_DATA_FILES "image_lz4_2" "\"../data/BigBuckBunny_40_240x160_bgr555.raw\"" "--lz4 --force")
+target_gbacomp_file(TARGET_DATA_FILES "image_lz4_3" "\"../data/BigBuckBunny_361_240x160_bgr555.raw\"" "--lz4 --force")
+target_gbacomp_file(TARGET_DATA_FILES "image_lz4_4" "\"../data/gradient_240x160_bgr555.raw\"" "--lz4 --force")
+target_gbacomp_file(TARGET_DATA_FILES "image_lz4_5" "\"../data/nightshot_iso_100_240x160_bgr555.raw\"" "--lz4 --force")
+target_gbacomp_file(TARGET_DATA_FILES "image_lz4_6" "\"../data/squish_240x160_bgr555.raw\"" "--lz4 --force")
+target_gbacomp_file(TARGET_DATA_FILES "image_lz4_7" "\"../data/TearsOfSteel_1200_240x160_bgr555.raw\"" "--lz4 --force")
+target_gbacomp_file(TARGET_DATA_FILES "image_lz77_0" "\"../data/flower_foveon_240x160_bgr555.raw\"" "--lz10 --force")
+target_gbacomp_file(TARGET_DATA_FILES "image_lz77_1" "\"../data/artificial_240x160_bgr555.raw\"" "--lz10 --force")
+target_gbacomp_file(TARGET_DATA_FILES "image_lz77_2" "\"../data/BigBuckBunny_40_240x160_bgr555.raw\"" "--lz10 --force")
+target_gbacomp_file(TARGET_DATA_FILES "image_lz77_3" "\"../data/BigBuckBunny_361_240x160_bgr555.raw\"" "--lz10 --force")
+target_gbacomp_file(TARGET_DATA_FILES "image_lz77_4" "\"../data/gradient_240x160_bgr555.raw\"" "--lz10 --force")
+target_gbacomp_file(TARGET_DATA_FILES "image_lz77_5" "\"../data/nightshot_iso_100_240x160_bgr555.raw\"" "--lz10 --force")
+target_gbacomp_file(TARGET_DATA_FILES "image_lz77_6" "\"../data/squish_240x160_bgr555.raw\"" "--lz10 --force")
+target_gbacomp_file(TARGET_DATA_FILES "image_lz77_7" "\"../data/TearsOfSteel_1200_240x160_bgr555.raw\"" "--lz10 --force")
 
 LIST(APPEND TARGET_INCLUDE_DIRS
 	${DEVKITARM}/arm-none-eabi/include
@@ -64,7 +85,7 @@ LIST(APPEND TARGET_INCLUDE_DIRS
 )
 
 # gbacomp example
-add_executable(gbacomp ${TARGET_SOURCE_FILES}) # Create the elf file
+add_executable(gbacomp ${TARGET_SOURCE_FILES} ${TARGET_DATA_FILES}) # Create the elf file
 add_gba_executables(gbacomp "GBACOMP" "GBAC" "HB" 1) # Generate the .gba from the elf
 add_map_file(gbacomp)
 add_sections_file(gbacomp)

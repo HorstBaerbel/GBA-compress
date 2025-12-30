@@ -11,29 +11,68 @@
 
 #include "data/images.h"
 
-EWRAM_DATA ALIGN(4) uint8_t ScratchPad[240 * 160 * 3]; // scratch pad memory for decompression
+EWRAM_DATA ALIGN(4) uint8_t ScratchPad[240 * 160 * 2];
 
-auto Decompress_LZ4(const uint8_t *data) -> void
+auto waitForKey(KEYPAD_BITS key) -> void
 {
-	Compression::LZ4UnCompWrite8bit_ASM(reinterpret_cast<const uint32_t *>(data), reinterpret_cast<uint32_t *>(ScratchPad));
+	do
+	{
+		scanKeys();
+		if (keysDown() & key)
+		{
+			break;
+		}
+	} while (true);
 }
 
-auto Decompress_LZ10(const uint8_t *data) -> void
+auto Decompress_LZ4(const uint8_t *const *compressedData, uint32_t compressedCount) -> void
 {
-	Compression::LZ77UnCompWrite16bit_ASM(data, ScratchPad);
+	for (uint32_t i = 0; i < compressedCount; ++i)
+	{
+		Compression::LZ4UnCompWrite16bit_ASM(reinterpret_cast<const uint32_t *>(compressedData[i]), reinterpret_cast<uint32_t *>(VRAM));
+	}
 }
 
-struct ImageEntry
+auto Decompress_LZ77(const uint8_t *const *compressedData, uint32_t compressedCount) -> void
 {
-	const char *codec = nullptr;
-	const uint8_t *data = nullptr;
-	void (*func)(const uint8_t *) = nullptr;
+	for (uint32_t i = 0; i < compressedCount; ++i)
+	{
+		Compression::LZ77UnCompWrite16bit_ASM(compressedData[i], reinterpret_cast<uint32_t *>(VRAM));
+	}
+}
+
+struct CodecEntry
+{
+	const char *name = nullptr;
+	void (*func)(const uint8_t *const *, uint32_t) = nullptr;
+	uint32_t compressedCount = 0;
+	const uint8_t *compressedData[8];
 };
 
-const ImageEntry Images[] = {
-	{"             LZ4", IMAGE_LZ4_DATA, &Decompress_LZ4},
-	{"         LZSS / LZ10", IMAGE_LZ10_DATA, &Decompress_LZ10},
-};
+static const CodecEntry Codecs[] = {
+	{"             LZ4", &Decompress_LZ4, 8, {IMAGE_LZ4_0_DATA, IMAGE_LZ4_1_DATA, IMAGE_LZ4_2_DATA, IMAGE_LZ4_3_DATA, IMAGE_LZ4_4_DATA, IMAGE_LZ4_5_DATA, IMAGE_LZ4_6_DATA, IMAGE_LZ4_7_DATA}},
+	{"         LZSS / LZ77", &Decompress_LZ77, 8, {IMAGE_LZ77_0_DATA, IMAGE_LZ77_1_DATA, IMAGE_LZ77_2_DATA, IMAGE_LZ77_3_DATA, IMAGE_LZ77_4_DATA, IMAGE_LZ77_5_DATA, IMAGE_LZ77_6_DATA, IMAGE_LZ77_7_DATA}}};
+
+auto Compare_LZ4_LZ77() -> bool
+{
+	bool success = true;
+	const auto compressedCount = Codecs[0].compressedCount < Codecs[1].compressedCount ? Codecs[0].compressedCount : Codecs[1].compressedCount;
+	for (uint32_t ci = 0; ci < compressedCount; ++ci)
+	{
+		Compression::LZ4UnCompWrite16bit_ASM(reinterpret_cast<const uint32_t *>(Codecs[0].compressedData[ci]), reinterpret_cast<uint32_t *>(VRAM));
+		Compression::LZ77UnCompWrite16bit_ASM(Codecs[1].compressedData[ci], ScratchPad);
+		for (uint32_t i = 0; i < sizeof(ScratchPad) / 2; ++i)
+		{
+			if (reinterpret_cast<const uint16_t *>(VRAM)[i] != reinterpret_cast<const uint16_t *>(ScratchPad)[i])
+			{
+				success = false;
+				Debug::printf("Uncompressed data %d difference in pixel %d", ci, i);
+				break;
+			}
+		}
+	}
+	return success;
+}
 
 int main()
 {
@@ -42,55 +81,57 @@ int main()
 	Memory::RegWaitEwram = Memory::WaitEwramNormal;
 	// start wall clock
 	irqInit();
-	uint32_t imageIndex = 0;
+	// set up text UI
+	TUI::setup();
+	TUI::fillBackground(TUI::Color::Black);
+	TUI::fillForeground(TUI::Color::Black);
+	TUI::printf(0, 0, "      Decompression demo");
+	TUI::printf(0, 11, "Press A to check decompression");
+	// wait for keypress
+	waitForKey(KEY_A);
+	// first check if we're decoding LZ4 / LZ77 correctly
+	const auto success = Compare_LZ4_LZ77();
+	TUI::setup();
+	TUI::fillBackground(TUI::Color::Black);
+	TUI::fillForeground(TUI::Color::Black);
+	TUI::printf(0, 0, "      Decompression demo");
+	TUI::printf(0, 9, "Press A to skip to benchmarks");
+	TUI::setColor(TUI::Color::Black, success ? TUI::Color::LightGreen : TUI::Color::LightRed);
+	TUI::printf(0, 11, success ? "       Decompression ok" : "     Decompression failed");
+	// wait for keypress
+	waitForKey(KEY_A);
+	uint32_t codecIndex = 0;
 	do
 	{
+		const auto &codec = Codecs[codecIndex];
 		// set up text UI
 		TUI::setup();
 		TUI::fillBackground(TUI::Color::Black);
+		TUI::fillForeground(TUI::Color::Black);
 		TUI::printf(0, 0, "      Decompression demo");
-		TUI::printf(0, 9, "    Press A to decompress");
-		TUI::printf(0, 11, Images[imageIndex].codec);
+		TUI::printf(0, 9, codec.name);
+		TUI::printf(0, 11, "    Press A to decompress");
 		// wait for keypress
-		do
-		{
-			scanKeys();
-			if (keysDown() & KEY_A)
-			{
-				break;
-			}
-		} while (true);
+		waitForKey(KEY_A);
 		// switch video mode to 240x160x2
 		REG_DISPCNT = MODE_3 | BG2_ON;
 		// start benchmark timer
 		REG_TM3CNT_L = 0;
 		REG_TM3CNT_H = TIMER_START | 2;
-		// decode and blit image
-		Images[imageIndex].func(Images[imageIndex].data);
+		// run test function
+		codec.func(codec.compressedData, codec.compressedCount);
 		// end benchmark timer
 		REG_TM3CNT_H = 0;
 		auto durationMs = static_cast<int32_t>(REG_TM3CNT_L) * 1000;
-		Debug::printf("Decoding time: %f ms", durationMs);
-		// convert image from RGB888 to BGR555 and display
-		auto srcPtr8 = reinterpret_cast<const uint8_t *>(ScratchPad);
-		auto dstPtr16 = reinterpret_cast<uint16_t *>(VRAM);
-		for (uint32_t i = 0; i < 240 * 160; ++i, srcPtr8 += 3)
-		{
-			uint32_t pixel = static_cast<uint32_t>(srcPtr8[0]) >> 3;
-			pixel |= (static_cast<uint32_t>(srcPtr8[1]) >> 3) << 5;
-			pixel |= (static_cast<uint32_t>(srcPtr8[2]) >> 3) << 10;
-			*dstPtr16++ = pixel;
-		}
+		TUI::setup();
+		TUI::fillBackground(TUI::Color::Black);
+		TUI::fillForeground(TUI::Color::Black);
+		TUI::printf(0, 0, "      Decompression demo");
+		TUI::printf(0, 9, codec.name);
+		TUI::printf(0, 11, "  Decompressed in: %f ms", durationMs);
 		// wait for keypress
-		do
-		{
-			scanKeys();
-			if (keysDown() & KEY_A)
-			{
-				break;
-			}
-		} while (true);
-		imageIndex = (imageIndex + 1) % (sizeof(Images) / sizeof(ImageEntry));
+		waitForKey(KEY_A);
+		codecIndex = (codecIndex + 1) % (sizeof(Codecs) / sizeof(CodecEntry));
 	} while (true);
 	return 0;
 }
