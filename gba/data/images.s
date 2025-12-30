@@ -46,6 +46,12 @@ IMAGE_LZ4_6_DATA:
     .align 2
 IMAGE_LZ4_7_DATA:
     .incbin "image_lz4_7"
+IMAGE_LZ4_DATA_END:
+    .global IMAGE_LZ4_DATA_SIZE
+    .type IMAGE_LZ4_DATA_SIZE, %object
+    .align 2
+IMAGE_LZ4_DATA_SIZE:
+    .int IMAGE_LZ4_DATA_END - IMAGE_LZ4_0_DATA
 
 .section .rodata
     .global IMAGE_LZ77_0_DATA
@@ -95,3 +101,9 @@ IMAGE_LZ77_6_DATA:
     .align 2
 IMAGE_LZ77_7_DATA:
     .incbin "image_lz77_7"
+IMAGE_LZ77_DATA_END:
+    .global IMAGE_LZ77_DATA_SIZE
+    .type IMAGE_LZ77_DATA_SIZE, %object
+    .align 2
+IMAGE_LZ77_DATA_SIZE:
+    .int IMAGE_LZ77_DATA_END - IMAGE_LZ77_0_DATA

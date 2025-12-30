@@ -45,13 +45,14 @@ struct CodecEntry
 {
 	const char *name = nullptr;
 	void (*func)(const uint8_t *const *, uint32_t) = nullptr;
+	uint32_t compressedSize = 0;
 	uint32_t compressedCount = 0;
 	const uint8_t *compressedData[8];
 };
 
 static const CodecEntry Codecs[] = {
-	{"             LZ4", &Decompress_LZ4, 8, {IMAGE_LZ4_0_DATA, IMAGE_LZ4_1_DATA, IMAGE_LZ4_2_DATA, IMAGE_LZ4_3_DATA, IMAGE_LZ4_4_DATA, IMAGE_LZ4_5_DATA, IMAGE_LZ4_6_DATA, IMAGE_LZ4_7_DATA}},
-	{"         LZSS / LZ77", &Decompress_LZ77, 8, {IMAGE_LZ77_0_DATA, IMAGE_LZ77_1_DATA, IMAGE_LZ77_2_DATA, IMAGE_LZ77_3_DATA, IMAGE_LZ77_4_DATA, IMAGE_LZ77_5_DATA, IMAGE_LZ77_6_DATA, IMAGE_LZ77_7_DATA}}};
+	{"             LZ4", &Decompress_LZ4, IMAGE_LZ4_DATA_SIZE, 8, {IMAGE_LZ4_0_DATA, IMAGE_LZ4_1_DATA, IMAGE_LZ4_2_DATA, IMAGE_LZ4_3_DATA, IMAGE_LZ4_4_DATA, IMAGE_LZ4_5_DATA, IMAGE_LZ4_6_DATA, IMAGE_LZ4_7_DATA}},
+	{"         LZSS / LZ77", &Decompress_LZ77, IMAGE_LZ77_DATA_SIZE, 8, {IMAGE_LZ77_0_DATA, IMAGE_LZ77_1_DATA, IMAGE_LZ77_2_DATA, IMAGE_LZ77_3_DATA, IMAGE_LZ77_4_DATA, IMAGE_LZ77_5_DATA, IMAGE_LZ77_6_DATA, IMAGE_LZ77_7_DATA}}};
 
 auto Compare_LZ4_LZ77() -> bool
 {
@@ -86,7 +87,7 @@ int main()
 	TUI::fillBackground(TUI::Color::Black);
 	TUI::fillForeground(TUI::Color::Black);
 	TUI::printf(0, 0, "      Decompression demo");
-	TUI::printf(0, 11, "Press A to check decompression");
+	TUI::printf(0, 19, "Press A to check decompression");
 	// wait for keypress
 	waitForKey(KEY_A);
 	// switch video mode to 240x160x2
@@ -97,9 +98,9 @@ int main()
 	TUI::fillBackground(TUI::Color::Black);
 	TUI::fillForeground(TUI::Color::Black);
 	TUI::printf(0, 0, "      Decompression demo");
-	TUI::printf(0, 9, "Press A to skip to benchmarks");
+	TUI::printf(0, 19, "Press A to skip to benchmarks");
 	TUI::setColor(TUI::Color::Black, success ? TUI::Color::LightGreen : TUI::Color::LightRed);
-	TUI::printf(0, 11, success ? "       Decompression ok" : "     Decompression failed");
+	TUI::printf(0, 10, success ? "       Decompression ok" : "     Decompression failed");
 	// wait for keypress
 	waitForKey(KEY_A);
 	uint32_t codecIndex = 0;
@@ -112,7 +113,8 @@ int main()
 		TUI::fillForeground(TUI::Color::Black);
 		TUI::printf(0, 0, "      Decompression demo");
 		TUI::printf(0, 9, codec.name);
-		TUI::printf(0, 11, "    Press A to decompress");
+		TUI::printf(0, 10, "       Size %f kB", static_cast<int32_t>((static_cast<int64_t>(codec.compressedSize) << 16) / 1000));
+		TUI::printf(0, 19, "    Press A to decompress");
 		// wait for keypress
 		waitForKey(KEY_A);
 		// switch video mode to 240x160x2
@@ -130,7 +132,8 @@ int main()
 		TUI::fillForeground(TUI::Color::Black);
 		TUI::printf(0, 0, "      Decompression demo");
 		TUI::printf(0, 9, codec.name);
-		TUI::printf(0, 11, "  Decompressed in: %f ms", durationMs);
+		TUI::printf(0, 10, "       Size %f kB", static_cast<int32_t>((static_cast<int64_t>(codec.compressedSize) << 16) / 1000));
+		TUI::printf(0, 11, "  Decompressed in %f ms", durationMs);
 		// wait for keypress
 		waitForKey(KEY_A);
 		codecIndex = (codecIndex + 1) % (sizeof(Codecs) / sizeof(CodecEntry));
