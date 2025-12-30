@@ -89,6 +89,8 @@ int main()
 	TUI::printf(0, 11, "Press A to check decompression");
 	// wait for keypress
 	waitForKey(KEY_A);
+	// switch video mode to 240x160x2
+	REG_DISPCNT = MODE_3 | BG2_ON;
 	// first check if we're decoding LZ4 / LZ77 correctly
 	const auto success = Compare_LZ4_LZ77();
 	TUI::setup();
