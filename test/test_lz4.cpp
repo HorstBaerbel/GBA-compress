@@ -17,13 +17,14 @@ struct Lz4TestFile
 };
 
 static const std::vector<Lz4TestFile> Lz4TestFiles = {
-    {"lorem_ipsum_2k.txt", 796},
-    {"artificial_240x160.raw", 59528},
-    {"BigBuckBunny_40_240x160.raw", 10928},
-    {"black_240x160.raw", 1320},
-    {"mask6.raw", 84},
-    {"squish_240x160.raw", 61412},
-    {"bbb_adpcm_22050.wav", 285560}};
+    {"lorem_ipsum_2k.txt", 792},                 // Text
+    {"artificial_240x160.raw", 59480},           // RGB888 artificial image
+    {"flower_foveon_240x160_bgr555.raw", 34812}, // XBGR1555 photo image
+    {"BigBuckBunny_40_240x160.raw", 10768},      // RGB888 mostly white image
+    {"black_240x160.raw", 1040},                 // RGB888 all black image
+    {"mask6.raw", 76},                           // Bit mask
+    {"squish_240x160.raw", 61412},               // RGB888 gradient image
+    {"bbb_adpcm_22050.wav", 285560}};            // ADPCM audio data
 
 const std::string DataPathTest = "../../data/";
 

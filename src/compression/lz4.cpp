@@ -72,7 +72,7 @@ namespace Compression
                         bestMatch.distance = distance;
                         bestMatch.length = matchLength;
                         // check if we could improve or can return now
-                        if (matchLength >= MAX_MATCH_LENGTH)
+                        if (matchLength >= MaxMatchLength)
                         {
                             return bestMatch;
                         }
@@ -236,7 +236,7 @@ namespace Compression
                         --currMatchLength;
                     }
                     // we need to find the length of the current literal run to determine how many length bytes we need
-                    // a literal stores a one byte, plus one byte for literal length > 15, two over 270, ...
+                    // a literal run stores one byte, plus one byte for literal length > 15, two over 270, ...
                     const uint32_t extraLiteralCost = matchIt != matches.cend() ? extraLengthBytesNeeded(matchIt->first - srcPosition - 1) : 0;
                     const auto literalCost = 1 + extraLiteralCost + cost[srcPosition + 1];
                     // check if storing literals is cheaper than the best current match
