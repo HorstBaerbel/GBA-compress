@@ -1,10 +1,10 @@
 #include "compression/lz4.h"
 #include "compression/lz77.h"
-#include "memory/memory.h"
 #include "print/output.h"
 #include "sys/base.h"
 #include "sys/input.h"
 #include "sys/interrupts.h"
+#include "sys/memctrl.h"
 #include "sys/timers.h"
 #include "sys/video.h"
 #include "tui.h"
@@ -12,18 +12,6 @@
 #include "data/images.h"
 
 EWRAM_DATA ALIGN(4) uint8_t ScratchPad[240 * 160 * 2];
-
-auto waitForKey(KEYPAD_BITS key) -> void
-{
-	do
-	{
-		scanKeys();
-		if (keysDown() & key)
-		{
-			break;
-		}
-	} while (true);
-}
 
 auto Decompress_LZ4(const uint8_t *const *compressedData, uint32_t compressedCount) -> void
 {
@@ -77,19 +65,36 @@ auto Compare_LZ4_LZ77() -> bool
 
 int main()
 {
-	// set waitstates for GamePak ROM and EWRAM
-	Memory::RegWaitCnt = Memory::WaitCntFast;
-	Memory::RegWaitEwram = Memory::WaitEwramNormal;
 	// start wall clock
-	irqInit();
+	Irq::init();
 	// set up text UI
 	TUI::setup();
 	TUI::fillBackground(TUI::Color::Black);
+	// set waitstates for GamePak ROM
+	if (!MemCtrl::setWaitCnt(MemCtrl::WaitCntFast))
+	{
+		if (MemCtrl::setWaitCnt(MemCtrl::WaitCntNormal))
+		{
+			TUI::setColor(TUI::Color::Black, TUI::Color::Yellow);
+			TUI::printf(0, 9, "      Slow ROM detected");
+			TUI::printf(0, 10, " Playback might not be optimal");
+		}
+		else
+		{
+			TUI::setColor(TUI::Color::Black, TUI::Color::Red);
+			TUI::printf(0, 9, "    Very slow ROM detected");
+			TUI::printf(0, 10, "   Expect playback problems");
+		}
+		TUI::setColor(TUI::Color::Black, TUI::Color::LightGray);
+		TUI::printf(0, 19, "     Press A to continue");
+		// wait for keypress
+		Input::waitForKeysDown(Input::KeyA, true);
+	}
 	TUI::fillForeground(TUI::Color::Black);
 	TUI::printf(0, 0, "      Decompression demo");
 	TUI::printf(0, 19, "Press A to check decompression");
 	// wait for keypress
-	waitForKey(KEY_A);
+	Input::waitForKeysDown(Input::KeyA, true);
 	// switch video mode to 240x160x2
 	REG_DISPCNT = MODE_3 | BG2_ON;
 	// first check if we're decoding LZ4 / LZ77 correctly
@@ -102,7 +107,7 @@ int main()
 	TUI::setColor(TUI::Color::Black, success ? TUI::Color::LightGreen : TUI::Color::LightRed);
 	TUI::printf(0, 10, success ? "       Decompression ok" : "     Decompression failed");
 	// wait for keypress
-	waitForKey(KEY_A);
+	Input::waitForKeysDown(Input::KeyA, true);
 	uint32_t codecIndex = 0;
 	do
 	{
@@ -116,7 +121,7 @@ int main()
 		TUI::printf(0, 10, "       Size %f kB", static_cast<int32_t>((static_cast<int64_t>(codec.compressedSize) << 16) / 1000));
 		TUI::printf(0, 19, "    Press A to decompress");
 		// wait for keypress
-		waitForKey(KEY_A);
+		Input::waitForKeysDown(Input::KeyA, true);
 		// switch video mode to 240x160x2
 		REG_DISPCNT = MODE_3 | BG2_ON;
 		// start benchmark timer
@@ -135,7 +140,7 @@ int main()
 		TUI::printf(0, 10, "       Size %f kB", static_cast<int32_t>((static_cast<int64_t>(codec.compressedSize) << 16) / 1000));
 		TUI::printf(0, 11, "  Decompressed in %f ms", durationMs);
 		// wait for keypress
-		waitForKey(KEY_A);
+		Input::waitForKeysDown(Input::KeyA, true);
 		codecIndex = (codecIndex + 1) % (sizeof(Codecs) / sizeof(CodecEntry));
 	} while (true);
 	return 0;
