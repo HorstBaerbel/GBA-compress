@@ -41,12 +41,12 @@ Please be aware that my compression data "corpus" is just some files I threw tog
 
 ### Decompression speed on GBA
 
-There is a GBA example in [gba/gbacomp.cpp](/gba/gbacomp.cpp) that tests and benchmarks decompression on the GBA. It uses 8 XBGR1555 images, which (see table above) is a worst-case scenario for LZ4 ratio wise. gbacomp shrinks these files to **226.3 kB** using LZ4 and 238.7 kB using LZ77, so only a small win for LZ4. Decompression on GBA takes **346.1 ms** for LZ4 and 404.6 ms for LZ77, so a clear win for LZ4 there.
+There is a GBA example in [gba/gbacomp.cpp](/gba/gbacomp.cpp) that tests and benchmarks decompression on the GBA. It uses 8 XBGR1555 images, which (see table above) is a worst-case scenario for LZ4 ratio wise. gbacomp shrinks these files to **226.3 kB** using LZ4 and 238.7 kB using LZ77, so only a small win for LZ4. Decompression on GBA takes **346.1 ms** for LZ4 and 404.6 ms for LZ77, so a clear win for LZ4 there. There's an option to use DMA3 to decompress LZ4, which is even faster (but not everybody might like to use DMA for this).
 
-|                    | LZ4       | LZ77^           |
-| ------------------ | --------- | --------------- |
-| Size / kB          | **226.3** | 238.7 (+5.5 %)  |
-| Decompression / ms | **346.1** | 404.6 (+16.9 %) |
+|                           | LZ4 (DMA) | LZ4             | LZ77^           |
+| ------------------------- | --------- | --------------- | --------------- |
+| Size / kB                 | **226.3** | **226.3**       | 238.7 (+5.5 %)  |
+| Decompression / ms (mGBA) | **282.3** | 346.1 (+22.6 %) | 404.6 (+43.3 %) |
 
 ^: The LZ77 decompression routine is from [Lorenzooone/Pokemon-Gen3-to-Gen-X](https://github.com/Lorenzooone/Pokemon-Gen3-to-Gen-X/blob/main/source/decompress.s), which is the fastest routine I know of and definitely faster than the standard BIOS routine.
 
